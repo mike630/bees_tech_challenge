@@ -28,7 +28,7 @@ default_args = {
     'owner': 'Maycon Palomo',
     'email': ['sustain@bees.com'],
     'start_date': days_ago(1),
-    'email_on_failure' : False
+    'email_on_failure' : True
 }
 
 with DAG(
@@ -122,15 +122,15 @@ with DAG(
         # Add a columnn to identify the page number from which the record was fetched
         df = df.withColumn('api_page_number', regexp_extract(input_file_name(), r'brewery_page_(\d+)\.json', 1).cast("int"))
         
+        # If incremental load, filter the dataframe to only read and process files not yet ingested in the silver layer
+        
         incremental_or_first_load = ti.xcom_pull(task_ids='brewery_bronze')
         
         print("Incremental or first load - Page number:", incremental_or_first_load)
-        
-        # If incremental load, filter the dataframe to only read and process new pages not yet ingested in the silver layer
             
         df = df.filter(f"api_page_number >= {incremental_or_first_load}")
         
-        # Save the transformed data to the silver layer in parquet format, partitioned by country    
+        # Save the transformed data to the silver layer in parquet format, partitioned by country, inserting only new data   
         df.coalesce(1) \
             .write \
             .format('parquet') \
@@ -143,7 +143,7 @@ with DAG(
         
         spark.read.format("parquet").load('/home/airflow/datalake/silver/').createOrReplaceTempView('V_BREWERY_GOLD')
         
-        # View will be shown at the task logs
+        # View will be shown at the task log
         spark.sql("""
                        
                     SELECT country, brewery_type, count(*) as total
@@ -167,9 +167,9 @@ with DAG(
         )
     
     t03 = PythonOperator(
-    task_id='brewery_gold',
-    python_callable=brewery_gold
-    )
+        task_id='brewery_gold',
+        python_callable=brewery_gold
+        )
     
     end = DummyOperator(task_id='end')
 

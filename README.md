@@ -21,7 +21,7 @@ Project layout
   - silver/ — processed parquet partitions per country.
 
 Data flow
-1. The DAG calls the public brewery API and writes paginated JSON into the bronze folder under the container path /home/airflow/datalake/bronze (mounted from the workspace `./datalake` via [docker-compose.yaml](docker-compose.yaml)).
+1. The DAG calls the public brewery API and writes paginated JSON files into the bronze folder under the container path /home/airflow/datalake/bronze (mounted from the workspace `./datalake` via [docker-compose.yaml](docker-compose.yaml)).
 2. Downstream tasks (noted in [dags/bees_dag.py](dags/bees_dag.py)) convert/partition data into the silver layer (Parquet files under [datalake/silver](datalake/silver)).
 3. Gold layer shows the final view at the Airflow task log.
 
@@ -31,6 +31,7 @@ Important notes
 Troubleshooting
 - If DAG fails to write files, verify volume mounts in [docker-compose.yaml](docker-compose.yaml) and container permissions and restart Airflow container.
 - Check scheduler and webserver logs under ./logs (mounted by compose).
+- Check Airflow task logs to analyze about any error related to the ETL process.
 
 Maintainers
 - See the DAG implementation at [dags/bees_dag.py](dags/bees_dag.py) for code-level details.
