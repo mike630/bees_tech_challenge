@@ -23,6 +23,7 @@ spark = SparkSession.builder \
 import requests
 import json
 import os
+from datetime import timedelta
 
 default_args = {
     'owner': 'Maycon Palomo',
@@ -157,18 +158,24 @@ with DAG(
 
     t01 = PythonOperator(
         task_id='brewery_bronze',
-        python_callable=brewery_bronze
+        python_callable=brewery_bronze,
+        retries=3,  # Attempt 3 retries
+        retry_delay=timedelta(seconds=10), # Wait 10 seconds between retries
         )
     
     t02 = PythonOperator(
         task_id='brewery_silver',
         python_callable=brewery_silver,
-        provide_context=True
+        provide_context=True,
+        retries=3,  # Attempt 3 retries
+        retry_delay=timedelta(seconds=10), # Wait 10 seconds between retries
         )
     
     t03 = PythonOperator(
         task_id='brewery_gold',
-        python_callable=brewery_gold
+        python_callable=brewery_gold,
+        retries=3,  # Attempt 3 retries
+        retry_delay=timedelta(seconds=10), # Wait 10 seconds between retries
         )
     
     end = DummyOperator(task_id='end')
